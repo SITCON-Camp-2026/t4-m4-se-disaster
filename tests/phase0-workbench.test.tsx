@@ -85,7 +85,20 @@ describe("Phase0Workbench draft editor", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("requires time, location, and confirmation before adding a raw record", () => {
+  it("requires raw text before adding a raw record", () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: /新增原始資訊/i }));
+    fireEvent.click(screen.getByRole("button", { name: /加入清單/i }));
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "請先填寫原始資訊內容，才能加入清單。",
+    );
+    expect(screen.queryByText("系統生成待補提示")).not.toBeInTheDocument();
+    expect(screen.queryByText("13 筆資料")).not.toBeInTheDocument();
+  });
+
+  it("adds incomplete raw records and marks missing fields for review", () => {
     render(<App />);
 
     fireEvent.click(screen.getByRole("button", { name: /新增原始資訊/i }));
@@ -94,11 +107,25 @@ describe("Phase0Workbench draft editor", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: /加入清單/i }));
 
-    expect(screen.getByRole("alert")).toHaveTextContent(
-      "請先填寫原始資訊內容、時間、地點或範圍、確認方式",
-    );
-    expect(screen.queryByText("系統生成待補提示")).not.toBeInTheDocument();
-    expect(screen.queryByText("13 筆資料")).not.toBeInTheDocument();
+    expect(screen.getByText("尚未完成必填欄位的狀況描述")).toBeInTheDocument();
+    expect(screen.getByText("系統生成待補提示")).toBeInTheDocument();
+    expect(
+      screen.getByText("這筆快速回報先收入清單，但仍是不完整原始資訊。"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("資訊取得方式未提供，待人工確認。"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("時間未提供，待人工確認。")).toBeInTheDocument();
+    expect(
+      screen.getByText("地點或範圍未提供，待人工確認。"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("確認方式未提供，待人工確認。"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("流程判斷：欄位不足，標示為不完整與待人工確認。"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("13 筆資料")).toBeInTheDocument();
   });
 
   it("adds required quick report details and keeps the record review-needed", () => {

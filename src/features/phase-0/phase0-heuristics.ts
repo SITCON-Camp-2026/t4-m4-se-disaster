@@ -18,6 +18,10 @@ export function createPhase0Judgement(
     blockers.push("這不是已確認資訊，不能直接當成事實或任務依據。");
   }
 
+  if (record.sourceType === "quick_report") {
+    blockers.push("這是快速回報或來源待補資訊，欄位完整性仍需人工確認。");
+  }
+
   if (
     /有人說|有人在群組|社群|疑似|不知道|尚未|可能|似乎|只知道/.test(rawText)
   ) {
@@ -34,7 +38,9 @@ export function createPhase0Judgement(
 
   const suggestedNextStep = isVerified
     ? "keep_raw"
-    : rawText.includes("不知道") || rawText.includes("尚未")
+    : record.sourceType === "quick_report" ||
+        rawText.includes("不知道") ||
+        rawText.includes("尚未")
       ? "ask_for_more_info"
       : record.id === "M-010"
         ? "create_site_update_suggestion"

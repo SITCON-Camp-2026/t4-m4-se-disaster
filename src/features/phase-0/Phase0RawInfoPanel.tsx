@@ -7,6 +7,7 @@ import type { Phase0MessyRecord } from "./phase0-types";
 type GeneratedReviewNote = {
   provided: string[];
   missing: string[];
+  decisionLog: string[];
 };
 
 type RawInfoAiSuggestion = {
@@ -250,15 +251,8 @@ export function Phase0RawInfoPanel({
     : undefined;
 
   const handleAddRecord = () => {
-    if (
-      !newRawText.trim() ||
-      !newReportedAt.trim() ||
-      !newLocation.trim() ||
-      !newConfirmation
-    ) {
-      setNewFormError(
-        "請先填寫原始資訊內容、時間、地點或範圍、確認方式，才能加入清單。",
-      );
+    if (!newRawText.trim()) {
+      setNewFormError("請先填寫原始資訊內容，才能加入清單。");
       return;
     }
 
@@ -270,8 +264,31 @@ export function Phase0RawInfoPanel({
       newConfirmation ? `確認方式：${newConfirmation}` : "",
       newNote.trim() ? `備註：${newNote.trim()}` : "",
     ].filter(Boolean);
-    const missing = [
+    const missingFields = [
       newSourceType ? "" : "資訊取得方式未提供，待人工確認。",
+      newReportedAt.trim() ? "" : "時間未提供，待人工確認。",
+      newLocation.trim()
+        ? newLocation === "地點不確定"
+          ? "地點或範圍仍不確定，待人工確認。"
+          : ""
+        : "地點或範圍未提供，待人工確認。",
+      newConfirmation ? "" : "確認方式未提供，待人工確認。",
+    ].filter(Boolean);
+    const isIncomplete = missingFields.length > 0;
+    const missing = [
+      isIncomplete
+        ? "這筆快速回報先收入清單，但仍是不完整原始資訊。"
+        : "這筆快速回報已收入清單，但仍需人工確認後才能整理。",
+      ...missingFields,
+    ];
+    const decisionLog = [
+      "保留原文並收入原始資訊清單。",
+      isIncomplete
+        ? "流程判斷：欄位不足，標示為不完整與待人工確認。"
+        : "流程判斷：欄位已填，仍維持待人工確認，等待整理者判斷。",
+      newNote.includes("AI 判斷建議")
+        ? "AI 建議：欄位由 AI 建議輔助填入，仍需人工檢查採用。"
+        : "",
     ].filter(Boolean);
 
     const nextRecord: Phase0MessyRecord = {
@@ -287,7 +304,8 @@ export function Phase0RawInfoPanel({
       ...current,
       [recordId]: {
         provided,
-        missing: ["這筆快速回報先收入清單，但仍是不完整原始資訊。", ...missing],
+        missing,
+        decisionLog,
       },
     }));
     setNewRawText("");
@@ -370,6 +388,16 @@ export function Phase0RawInfoPanel({
             ))}
           </ul>
         </div>
+        {reviewNote.decisionLog.length > 0 ? (
+          <div>
+            <strong>操作與判斷紀錄</strong>
+            <ul>
+              {reviewNote.decisionLog.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
       </section>
     );
   };
@@ -461,7 +489,7 @@ export function Phase0RawInfoPanel({
             <div className="phase0-raw__add-note">
               <h3>快速回報</h3>
               <p>
-                原始資訊內容、時間、地點或範圍、確認方式必填。送出後仍會標示為待人工確認，不會變成已確認資料。
+                原始資訊內容必填。來源、時間、地點或範圍、確認方式可先不填；送出後會標示缺漏與待人工確認，不會變成已確認資料。
               </p>
             </div>
             <label htmlFor="new-raw-text">
@@ -502,7 +530,7 @@ export function Phase0RawInfoPanel({
               </select>
             </label>
             <label htmlFor="new-reported-at">
-              時間（必填）
+              時間（可先不填）
               <input
                 id="new-reported-at"
                 type="time"
@@ -514,7 +542,7 @@ export function Phase0RawInfoPanel({
               />
             </label>
             <fieldset className="phase0-map-picker">
-              <legend>地點或範圍（必填）</legend>
+              <legend>地點或範圍（可先不選）</legend>
               <div className="phase0-map-picker__grid" role="radiogroup">
                 {locationOptions.map((option) => (
                   <button
@@ -534,7 +562,7 @@ export function Phase0RawInfoPanel({
               <p>這是課堂用模擬範圍，不連接真實地圖或真實地址。</p>
             </fieldset>
             <label htmlFor="new-confirmation">
-              確認方式（必填）
+              確認方式（可先不選）
               <select
                 id="new-confirmation"
                 value={newConfirmation}

@@ -42,4 +42,17 @@ describe("phase 0 heuristics", () => {
     expect(judgement.possibleKind).toBe("unknown");
     expect(judgement.suggestedNextStep).toBe("ask_for_more_info");
   });
+
+  it("asks for more information for quick reports with source gaps", () => {
+    const judgement = createPhase0Judgement({
+      id: "M-013",
+      rawText: "新增的快速回報內容。",
+      sourceType: "quick_report",
+      verificationStatus: "needs_review",
+      updatedAt: "2026-07-20T15:00:00+08:00",
+    });
+
+    expect(judgement.suggestedNextStep).toBe("ask_for_more_info");
+    expect(judgement.blockers.join(" ")).toContain("來源待補");
+  });
 });
