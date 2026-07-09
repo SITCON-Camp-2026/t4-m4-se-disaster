@@ -4,6 +4,7 @@ import { labelForSourceType } from "../../components/source-labels";
 import { StatusBadge } from "../../components/StatusBadge";
 import { labelForStatus } from "../../components/status-labels";
 import { formatDateTime } from "../../lib/date";
+import surpriseImageUrl from "../../../IMG_20260709_173431.png";
 import type { Phase0MessyRecord } from "./phase0-types";
 
 type GeneratedReviewNote = {
@@ -238,6 +239,7 @@ export function Phase0RawInfoPanel({
     useState<AiFillNotification | null>(null);
   const [detailRecordId, setDetailRecordId] = useState<string | null>(null);
   const [detailCopyMessage, setDetailCopyMessage] = useState("");
+  const [showPikachuSurprise, setShowPikachuSurprise] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
 
   const reviewNeededRecords = useMemo(
@@ -594,6 +596,15 @@ export function Phase0RawInfoPanel({
           <p>這些還不是整理後資料，不能直接當成行動依據。</p>
         </div>
         <div className="panel__header__actions">
+          <button
+            aria-label="打開小驚喜"
+            className="phase0-raw__surprise-button"
+            title="小驚喜"
+            type="button"
+            onClick={() => setShowPikachuSurprise(true)}
+          >
+            <span aria-hidden="true">⚡</span>
+          </button>
           <p>{records.length} 筆資料</p>
         </div>
       </div>
@@ -768,6 +779,36 @@ export function Phase0RawInfoPanel({
             ) : null}
             <button type="button" onClick={() => setAiFillNotification(null)}>
               知道了
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {showPikachuSurprise ? (
+        <div
+          className="phase0-modal__backdrop"
+          role="presentation"
+          onClick={() => setShowPikachuSurprise(false)}
+        >
+          <div
+            className="phase0-modal phase0-surprise-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="pikachu-surprise-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <p className="eyebrow">小彩蛋</p>
+            <h3 id="pikachu-surprise-title">被找到了！</h3>
+            <img
+              alt="吃餅乾的皮卡丘插圖"
+              className="phase0-surprise-modal__image"
+              src={surpriseImageUrl}
+            />
+            <p className="phase0-modal__content">
+              這只是原始資訊區塊裡的小驚喜，不會修改任何資料。
+            </p>
+            <button type="button" onClick={() => setShowPikachuSurprise(false)}>
+              收起來
             </button>
           </div>
         </div>

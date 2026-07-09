@@ -296,6 +296,30 @@ textarea {
   margin: 0;
 }
 
+.phase0-raw__surprise-button {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--border-soft);
+  border-radius: 999px;
+  padding: 0;
+  background: var(--surface-muted);
+  color: var(--warning-text);
+  cursor: pointer;
+  font-size: 0.75rem;
+  opacity: 0.34;
+  box-shadow: none;
+}
+
+.phase0-raw__surprise-button:hover,
+.phase0-raw__surprise-button:focus-visible {
+  border-color: var(--warning-border);
+  background: var(--warning-soft);
+  opacity: 0.9;
+  transform: translateY(-1px) rotate(-8deg);
+}
+
 .panel__header h2 {
   margin: 0;
 }
@@ -687,6 +711,32 @@ textarea {
 
 .phase0-raw__ai-modal button {
   justify-self: end;
+}
+
+.phase0-surprise-modal {
+  width: min(420px, 100%);
+  display: grid;
+  justify-items: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.phase0-surprise-modal h3 {
+  font-size: clamp(1.8rem, 6vw, 2.6rem);
+  color: var(--warning-text);
+}
+
+.phase0-surprise-modal button {
+  justify-self: center;
+}
+
+.phase0-surprise-modal__image {
+  display: block;
+  width: min(100%, 320px);
+  height: auto;
+  border: 1px solid var(--warning-border);
+  border-radius: 14px;
+  box-shadow: 0 16px 36px rgb(23 32 42 / 16%);
 }
 
 .phase0-raw__detail-modal {

@@ -107,6 +107,25 @@ describe("Phase0Workbench draft editor", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("opens a small surprise from the raw information header", () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: "打開小驚喜" }));
+
+    const dialog = screen.getByRole("dialog", { name: "被找到了！" });
+    expect(dialog).toHaveTextContent("小彩蛋");
+    expect(
+      within(dialog).getByRole("img", { name: "吃餅乾的皮卡丘插圖" }),
+    ).toBeInTheDocument();
+    expect(dialog).toHaveTextContent("不會修改任何資料");
+
+    fireEvent.click(within(dialog).getByRole("button", { name: "收起來" }));
+
+    expect(
+      screen.queryByRole("dialog", { name: "被找到了！" }),
+    ).not.toBeInTheDocument();
+  });
+
   it("requires raw text before adding a raw record", () => {
     render(<App />);
 
