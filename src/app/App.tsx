@@ -4,14 +4,10 @@ import { EmptyState } from "../components/EmptyState";
 import { Phase0RawInfoPanel } from "../features/phase-0/Phase0RawInfoPanel";
 import { Phase0Workbench } from "../features/phase-0/Phase0Workbench";
 import type { Phase0MessyRecord } from "../features/phase-0/phase0-types";
+import { LanguageProvider, useLanguage } from "../i18n/language";
 
 type TabKey = "raw" | "workbench";
 type ThemeMode = "light" | "dark";
-
-const tabs: Array<{ key: TabKey; label: string }> = [
-  { key: "raw", label: "原始資訊" },
-  { key: "workbench", label: "整理工作台" },
-];
 
 const workbenchPassword = "pika";
 const themeStorageKey = "phase0-theme-mode";
@@ -29,6 +25,15 @@ function getInitialTheme(): ThemeMode {
 }
 
 export function App() {
+  return (
+    <LanguageProvider>
+      <AppContent />
+    </LanguageProvider>
+  );
+}
+
+function AppContent() {
+  const { t, toggleLanguage } = useLanguage();
   const [activeTab, setActiveTab] = useState<TabKey>("raw");
   const [themeMode, setThemeMode] = useState<ThemeMode>(getInitialTheme);
   const [records, setRecords] = useState<Phase0MessyRecord[]>(() => [
@@ -75,7 +80,7 @@ export function App() {
     event.preventDefault();
 
     if (workbenchPasswordInput !== workbenchPassword) {
-      setWorkbenchPasswordError("密碼不正確，請重新輸入。");
+      setWorkbenchPasswordError(t("passwordError"));
       return;
     }
 
@@ -97,42 +102,48 @@ export function App() {
       <header className="hero">
         <div className="hero__topline">
           <p className="eyebrow">SITCON Camp 2026</p>
-          <button
-            className="theme-toggle"
-            type="button"
-            aria-pressed={themeMode === "dark"}
-            onClick={toggleThemeMode}
-          >
-            {themeMode === "dark" ? "淺色模式" : "深色模式"}
-          </button>
+          <div className="hero__controls">
+            <button
+              className="language-toggle"
+              type="button"
+              onClick={toggleLanguage}
+            >
+              {t("languageSwitch")}
+            </button>
+            <button
+              className="theme-toggle"
+              type="button"
+              aria-pressed={themeMode === "dark"}
+              onClick={toggleThemeMode}
+            >
+              {themeMode === "dark" ? t("lightMode") : t("darkMode")}
+            </button>
+          </div>
         </div>
-        <h1>災害資訊整理工作台</h1>
-        <p>
-          第一階段先用 coding agent
-          做出可展示的前端原型，再從成果中看見資料品質、角色、狀態與來源的限制。
-        </p>
+        <h1>{t("appTitle")}</h1>
+        <p>{t("appDescription")}</p>
       </header>
 
-      <nav className="tabs" aria-label="第一階段工作區">
-        {tabs.map((tab) => (
+      <nav className="tabs" aria-label={t("workspaceLabel")}>
+        {(["raw", "workbench"] satisfies TabKey[]).map((tabKey) => (
           <button
-            key={tab.key}
-            className={activeTab === tab.key ? "active" : ""}
+            key={tabKey}
+            className={activeTab === tabKey ? "active" : ""}
             type="button"
             onClick={() =>
-              tab.key === "workbench"
+              tabKey === "workbench"
                 ? requestWorkbenchAccess(selectedRecordId)
                 : openRawInfo()
             }
           >
-            {tab.label}
+            {tabKey === "raw" ? t("rawTab") : t("workbenchTab")}
           </button>
         ))}
       </nav>
 
       <section className="panel">
         {records.length === 0 ? (
-          <EmptyState message="目前沒有資料" />
+          <EmptyState message={t("emptyState")} />
         ) : activeTab === "raw" ? (
           <Phase0RawInfoPanel
             records={records}
@@ -168,16 +179,14 @@ export function App() {
             aria-modal="true"
             aria-labelledby="workbench-password-title"
           >
-            <h3 id="workbench-password-title">輸入整理工作台密碼</h3>
-            <p className="phase0-modal__content">
-              整理工作台包含可編輯判斷草稿。這是課堂練習用的前端門檻，不代表正式權限控管。
-            </p>
+            <h3 id="workbench-password-title">{t("passwordTitle")}</h3>
+            <p className="phase0-modal__content">{t("passwordDescription")}</p>
             <form
               className="workbench-password-form"
               onSubmit={confirmWorkbenchAccess}
             >
               <label htmlFor="workbench-password">
-                密碼
+                {t("passwordLabel")}
                 <input
                   autoFocus
                   id="workbench-password"
@@ -196,9 +205,9 @@ export function App() {
               ) : null}
               <div className="workbench-password-form__actions">
                 <button type="button" onClick={cancelWorkbenchAccess}>
-                  取消
+                  {t("cancel")}
                 </button>
-                <button type="submit">確認進入</button>
+                <button type="submit">{t("confirmEnter")}</button>
               </div>
             </form>
           </div>

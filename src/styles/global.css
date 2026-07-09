@@ -207,6 +207,13 @@ textarea {
   margin-bottom: 8px;
 }
 
+.hero__controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .hero h1 {
   margin: 0 0 12px;
   font-size: clamp(2rem, 4vw, 3.2rem);
@@ -225,7 +232,8 @@ textarea {
   color: var(--primary);
 }
 
-.theme-toggle {
+.theme-toggle,
+.language-toggle {
   border: 1px solid var(--border);
   border-radius: 999px;
   padding: 8px 12px;
@@ -238,6 +246,12 @@ textarea {
 .theme-toggle[aria-pressed="true"] {
   border-color: var(--primary);
   background: var(--primary-soft);
+}
+
+.language-toggle:hover,
+.language-toggle:focus-visible {
+  background: var(--primary-soft);
+  border-color: var(--primary);
 }
 
 .tabs {
@@ -769,6 +783,13 @@ textarea {
   line-height: 1.7;
 }
 
+.phase0-raw__original-text {
+  border-top: 1px solid var(--border-soft);
+  padding-top: 8px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
 .phase0-raw__detail-meta {
   display: flex;
   flex-wrap: wrap;
@@ -1197,6 +1218,10 @@ textarea {
   .hero__topline {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .hero__controls {
+    justify-content: flex-start;
   }
 
   .phase0-raw__ai-assist {

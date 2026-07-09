@@ -40,6 +40,51 @@ describe("App", () => {
     expect(window.localStorage.getItem("phase0-theme-mode")).toBe("light");
   });
 
+  it("toggles between Traditional Chinese and English", () => {
+    render(<App />);
+
+    expect(screen.getByText("災害資訊整理工作台")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "English" }));
+
+    expect(
+      screen.getByText("Disaster Information Workbench"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Raw Information" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Review Workbench" }),
+    ).toBeInTheDocument();
+    expect(window.localStorage.getItem("phase0-language")).toBe("en");
+
+    fireEvent.click(screen.getByRole("button", { name: "繁體中文" }));
+
+    expect(screen.getByText("災害資訊整理工作台")).toBeInTheDocument();
+    expect(window.localStorage.getItem("phase0-language")).toBe("zh-TW");
+  });
+
+  it("translates raw information text in English mode", () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: "English" }));
+
+    expect(
+      screen.getByText(
+        /Someone said that more than a dozen people are needed to clear mud/,
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(/光復車站後方有人說需要十幾個人清泥/),
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "View M-001 details" }));
+
+    const dialog = screen.getByRole("dialog", { name: "M-001" });
+    expect(dialog).toHaveTextContent("Original text");
+    expect(dialog).toHaveTextContent("光復車站後方有人說需要十幾個人清泥");
+  });
+
   it("keeps the home page focused on phase 0 tabs", () => {
     render(<App />);
 

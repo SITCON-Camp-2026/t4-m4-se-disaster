@@ -3,6 +3,11 @@ import { SourceLabel } from "../../components/SourceLabel";
 import { labelForSourceType } from "../../components/source-labels";
 import { StatusBadge } from "../../components/StatusBadge";
 import { labelForStatus } from "../../components/status-labels";
+import { useLanguage } from "../../i18n/language";
+import {
+  hasRawTextTranslation,
+  translateRawText,
+} from "../../i18n/phase0-content";
 import { formatDateTime } from "../../lib/date";
 import surpriseImageUrl from "../../../IMG_20260709_173431.png";
 import type { Phase0MessyRecord } from "./phase0-types";
@@ -225,6 +230,7 @@ export function Phase0RawInfoPanel({
   onAddRecord: (record: Phase0MessyRecord) => void;
   completedRecordIds?: string[];
 }) {
+  const { language, t } = useLanguage();
   const [newRawText, setNewRawText] = useState("");
   const [newSourceType, setNewSourceType] = useState("");
   const [newReportedAt, setNewReportedAt] = useState("");
@@ -255,7 +261,9 @@ export function Phase0RawInfoPanel({
   );
 
   const getRecordStatusText = (recordId: string) => {
-    return completedRecordIds.includes(recordId) ? "已完成整理" : undefined;
+    return completedRecordIds.includes(recordId)
+      ? t("completedSorting")
+      : undefined;
   };
   const detailRecord = detailRecordId
     ? records.find((record) => record.id === detailRecordId)
@@ -263,42 +271,83 @@ export function Phase0RawInfoPanel({
 
   const handleAddRecord = () => {
     if (!newRawText.trim()) {
-      setNewFormError("請先填寫原始資訊內容，才能加入清單。");
+      setNewFormError(t("rawTextRequiredError"));
       return;
     }
 
     const recordId = createNextRecordId(records);
     const provided = [
-      newSourceType ? `資訊取得方式：${newSourceType}` : "",
-      newReportedAt.trim() ? `時間：${newReportedAt.trim()}` : "",
-      newLocation.trim() ? `地點或範圍：${newLocation.trim()}` : "",
-      newConfirmation ? `確認方式：${newConfirmation}` : "",
-      newNote.trim() ? `備註：${newNote.trim()}` : "",
+      newSourceType
+        ? `${t("informationSourceMethod")}：${labelForSourceType(
+            newSourceType,
+            language,
+          )}`
+        : "",
+      newReportedAt.trim() ? `${t("time")}：${newReportedAt.trim()}` : "",
+      newLocation.trim()
+        ? `${t("locationOrArea")}：${labelForSourceType(newLocation, language)}`
+        : "",
+      newConfirmation
+        ? `${t("confirmationMethod")}：${labelForSourceType(
+            newConfirmation,
+            language,
+          )}`
+        : "",
+      newNote.trim() ? `${t("note")}：${newNote.trim()}` : "",
     ].filter(Boolean);
     const missingFields = [
-      newSourceType ? "" : "資訊取得方式未提供，待人工確認。",
-      newReportedAt.trim() ? "" : "時間未提供，待人工確認。",
+      newSourceType
+        ? ""
+        : language === "en"
+          ? "Information source method is missing and needs human review."
+          : "資訊取得方式未提供，待人工確認。",
+      newReportedAt.trim()
+        ? ""
+        : language === "en"
+          ? "Time is missing and needs human review."
+          : "時間未提供，待人工確認。",
       newLocation.trim()
         ? newLocation === "地點不確定"
-          ? "地點或範圍仍不確定，待人工確認。"
+          ? language === "en"
+            ? "Location or area is still uncertain and needs human review."
+            : "地點或範圍仍不確定，待人工確認。"
           : ""
-        : "地點或範圍未提供，待人工確認。",
-      newConfirmation ? "" : "確認方式未提供，待人工確認。",
+        : language === "en"
+          ? "Location or area is missing and needs human review."
+          : "地點或範圍未提供，待人工確認。",
+      newConfirmation
+        ? ""
+        : language === "en"
+          ? "Confirmation method is missing and needs human review."
+          : "確認方式未提供，待人工確認。",
     ].filter(Boolean);
     const isIncomplete = missingFields.length > 0;
     const missing = [
       isIncomplete
-        ? "這筆快速回報先收入清單，但仍是不完整原始資訊。"
-        : "這筆快速回報已收入清單，但仍需人工確認後才能整理。",
+        ? language === "en"
+          ? "This quick report was added to the list, but it is still incomplete raw information."
+          : "這筆快速回報先收入清單，但仍是不完整原始資訊。"
+        : language === "en"
+          ? "This quick report was added to the list, but it still needs human review before cleanup."
+          : "這筆快速回報已收入清單，但仍需人工確認後才能整理。",
       ...missingFields,
     ];
     const decisionLog = [
-      "保留原文並收入原始資訊清單。",
+      language === "en"
+        ? "Kept the original text and added it to the raw information list."
+        : "保留原文並收入原始資訊清單。",
       isIncomplete
-        ? "流程判斷：欄位不足，標示為不完整與待人工確認。"
-        : "流程判斷：欄位已填，仍維持待人工確認，等待整理者判斷。",
-      newNote.includes("AI 判斷建議")
-        ? "AI 建議：欄位由 AI 建議輔助填入，仍需人工檢查採用。"
+        ? language === "en"
+          ? "Flow judgement: fields are incomplete, so mark as incomplete and awaiting human review."
+          : "流程判斷：欄位不足，標示為不完整與待人工確認。"
+        : language === "en"
+          ? "Flow judgement: fields are filled, but still awaiting human review."
+          : "流程判斷：欄位已填，仍維持待人工確認，等待整理者判斷。",
+      newNote.includes("AI 判斷建議") ||
+      newNote.includes("AI judgement suggestion")
+        ? language === "en"
+          ? "AI suggestion: fields were assisted by AI suggestions and still need human review."
+          : "AI 建議：欄位由 AI 建議輔助填入，仍需人工檢查採用。"
         : "",
     ].filter(Boolean);
     const collectedAt = new Date().toISOString();
@@ -343,25 +392,44 @@ export function Phase0RawInfoPanel({
 
   const handleAiSuggestion = () => {
     if (!newRawText.trim()) {
-      setNewFormError("請先輸入原始資訊內容，再使用 AI 判斷建議。");
+      setNewFormError(t("aiNeedsRawTextError"));
       return;
     }
 
     const suggestion = buildAiSuggestion(newRawText);
     const filled = [
-      suggestion.sourceType ? `來源類型：${suggestion.sourceType}` : "",
-      suggestion.reportedAt ? `時間：${suggestion.reportedAt}` : "",
-      `地點或範圍：${suggestion.location}`,
-      `確認方式：${suggestion.confirmation}`,
-      "備註：AI 判斷建議與待確認提醒",
+      suggestion.sourceType
+        ? `${t("sourceTypeCategory")}：${labelForSourceType(
+            suggestion.sourceType,
+            language,
+          )}`
+        : "",
+      suggestion.reportedAt ? `${t("time")}：${suggestion.reportedAt}` : "",
+      `${t("locationOrArea")}：${labelForSourceType(
+        suggestion.location,
+        language,
+      )}`,
+      `${t("confirmationMethod")}：${labelForSourceType(
+        suggestion.confirmation,
+        language,
+      )}`,
+      `${t("note")}：${language === "en" ? "AI judgement suggestions and review reminders" : "AI 判斷建議與待確認提醒"}`,
     ].filter(Boolean);
     const needsManualReview = [
       suggestion.sourceType
         ? ""
-        : "來源類型：AI 未看出明確來源，請人工選擇或保留待補。",
-      suggestion.reportedAt ? "" : "時間：AI 未看出明確時間，請人工選擇。",
+        : language === "en"
+          ? "Source type: AI did not detect a clear source. Please select manually or keep it missing."
+          : "來源類型：AI 未看出明確來源，請人工選擇或保留待補。",
+      suggestion.reportedAt
+        ? ""
+        : language === "en"
+          ? "Time: AI did not detect a clear time. Please select manually."
+          : "時間：AI 未看出明確時間，請人工選擇。",
       suggestion.location === "地點不確定"
-        ? "地點或範圍：AI 只能標示不確定，請人工補選。"
+        ? language === "en"
+          ? "Location or area: AI can only mark it as uncertain. Please select manually."
+          : "地點或範圍：AI 只能標示不確定，請人工補選。"
         : "",
     ].filter(Boolean);
 
@@ -373,7 +441,31 @@ export function Phase0RawInfoPanel({
       const trimmedNote = current.trim();
 
       if (!trimmedNote || trimmedNote.startsWith("AI 判斷建議")) {
-        return suggestion.note;
+        return language === "en"
+          ? [
+              "AI judgement suggestion (needs human review):",
+              suggestion.sourceType
+                ? `Source suggestion: ${labelForSourceType(
+                    suggestion.sourceType,
+                    language,
+                  )}`
+                : "",
+              suggestion.reportedAt
+                ? `Time suggestion: ${suggestion.reportedAt}`
+                : "",
+              `Location or area suggestion: ${labelForSourceType(
+                suggestion.location,
+                language,
+              )}`,
+              `Confirmation method suggestion: ${labelForSourceType(
+                suggestion.confirmation,
+                language,
+              )}`,
+              "These field suggestions come from the raw text and do not mean the information is verified.",
+            ]
+              .filter(Boolean)
+              .join("\n")
+          : suggestion.note;
       }
 
       return `${trimmedNote}\n${suggestion.note}`;
@@ -391,10 +483,10 @@ export function Phase0RawInfoPanel({
 
     return (
       <section className="record-card__generated-note">
-        <h4>系統生成待補提示</h4>
+        <h4>{t("generatedReviewHint")}</h4>
         {reviewNote.provided.length > 0 ? (
           <div>
-            <strong>回報者已提供</strong>
+            <strong>{t("reporterProvided")}</strong>
             <ul>
               {reviewNote.provided.map((item) => (
                 <li key={item}>{item}</li>
@@ -403,7 +495,7 @@ export function Phase0RawInfoPanel({
           </div>
         ) : null}
         <div>
-          <strong>仍需人工確認</strong>
+          <strong>{t("stillNeedsManualReview")}</strong>
           <ul>
             {reviewNote.missing.map((item) => (
               <li key={item}>{item}</li>
@@ -412,7 +504,7 @@ export function Phase0RawInfoPanel({
         </div>
         {reviewNote.decisionLog.length > 0 ? (
           <div>
-            <strong>操作與判斷紀錄</strong>
+            <strong>{t("actionDecisionLog")}</strong>
             <ul>
               {reviewNote.decisionLog.map((item) => (
                 <li key={item}>{item}</li>
@@ -433,40 +525,46 @@ export function Phase0RawInfoPanel({
 
     const fields: DetailField[] = [
       {
-        label: "資訊取得方式",
-        value: details.sourceType || "未提供（待人工確認）",
+        label: t("informationSourceMethod"),
+        value: details.sourceType
+          ? labelForSourceType(details.sourceType, language)
+          : t("notProvidedReview"),
       },
       {
-        label: "時間",
-        value: details.reportedAt || "未提供（待人工確認）",
+        label: t("time"),
+        value: details.reportedAt || t("notProvidedReview"),
       },
       {
-        label: "地點或範圍",
-        value: details.location || "未提供（待人工確認）",
+        label: t("locationOrArea"),
+        value: details.location
+          ? labelForSourceType(details.location, language)
+          : t("notProvidedReview"),
       },
       {
-        label: "確認方式",
-        value: details.confirmation || "未提供（待人工確認）",
+        label: t("confirmationMethod"),
+        value: details.confirmation
+          ? labelForSourceType(details.confirmation, language)
+          : t("notProvidedReview"),
       },
       {
-        label: "備註",
-        value: details.note || "未提供",
+        label: t("note"),
+        value: details.note || t("notProvided"),
       },
       {
-        label: "收錄狀態",
+        label: t("intakeStatus"),
         value: details.isIncomplete
-          ? "不完整與待人工確認"
-          : "欄位已填，仍待人工確認",
+          ? t("incompleteReview")
+          : t("filledStillReview"),
       },
       {
-        label: "加入時間",
+        label: t("addedAt"),
         value: formatDateTime(details.collectedAt),
       },
     ];
 
     return (
       <section>
-        <h4>新增時取得的所有欄位</h4>
+        <h4>{t("intakeFieldsTitle")}</h4>
         <dl className="phase0-raw__detail-fields">
           {fields.map((field) => (
             <div key={field.label}>
@@ -477,7 +575,7 @@ export function Phase0RawInfoPanel({
         </dl>
         {details.missingFields.length > 0 ? (
           <div className="phase0-raw__detail-missing">
-            <strong>仍需人工確認</strong>
+            <strong>{t("stillNeedsManualReview")}</strong>
             <ul>
               {details.missingFields.map((field) => (
                 <li key={field}>{field}</li>
@@ -493,26 +591,45 @@ export function Phase0RawInfoPanel({
     const reviewNote = generatedReviewNotes[record.id];
     const details = record.intakeDetails;
     const statusText = getRecordStatusText(record.id);
+    const displayedRawText = translateRawText(record.rawText, language);
     const lines = [
-      `原始資訊 ${record.id}`,
-      `原文：${record.rawText}`,
-      `資訊取得方式：${labelForSourceType(details?.sourceType || record.sourceType || "未提供")}`,
-      `查核狀態：${labelForStatus(record.verificationStatus)}`,
-      statusText ? `整理狀態：${statusText}` : "",
-      `更新時間：${formatDateTime(record.updatedAt)}`,
-      details ? `時間：${details.reportedAt || "未提供"}` : "",
-      details ? `地點或範圍：${details.location || "未提供"}` : "",
-      details ? `確認方式：${details.confirmation || "未提供"}` : "",
-      details ? `備註：${details.note || "未提供"}` : "",
+      `${t("rawPanelTitle")} ${record.id}`,
+      `${t("rawDetailContent")}：${displayedRawText}`,
+      hasRawTextTranslation(record.rawText, language)
+        ? `${t("originalRawText")}：${record.rawText}`
+        : "",
+      `${t("informationSourceMethod")}：${labelForSourceType(
+        details?.sourceType || record.sourceType || t("notProvided"),
+        language,
+      )}`,
+      `${t("dataStatus")}：${labelForStatus(record.verificationStatus, language)}`,
+      statusText ? `${t("completedSorting")}：${statusText}` : "",
+      `${t("updatedAt")}：${formatDateTime(record.updatedAt)}`,
+      details ? `${t("time")}：${details.reportedAt || t("notProvided")}` : "",
       details
-        ? `收錄狀態：${
+        ? `${t("locationOrArea")}：${
+            details.location
+              ? labelForSourceType(details.location, language)
+              : t("notProvided")
+          }`
+        : "",
+      details
+        ? `${t("confirmationMethod")}：${
+            details.confirmation
+              ? labelForSourceType(details.confirmation, language)
+              : t("notProvided")
+          }`
+        : "",
+      details ? `${t("note")}：${details.note || t("notProvided")}` : "",
+      details
+        ? `${t("intakeStatus")}：${
             details.isIncomplete
-              ? "不完整與待人工確認"
-              : "欄位已填，仍待人工確認"
+              ? t("incompleteReview")
+              : t("filledStillReview")
           }`
         : "",
       reviewNote?.missing.length
-        ? `仍需人工確認：${reviewNote.missing.join(" / ")}`
+        ? `${t("stillNeedsManualReview")}：${reviewNote.missing.join(" / ")}`
         : "",
     ].filter(Boolean);
 
@@ -521,15 +638,15 @@ export function Phase0RawInfoPanel({
 
   const copyDetailSummary = async (record: Phase0MessyRecord) => {
     if (!navigator.clipboard?.writeText) {
-      setDetailCopyMessage("此瀏覽器不支援自動複製。");
+      setDetailCopyMessage(t("copyUnsupported"));
       return;
     }
 
     try {
       await navigator.clipboard.writeText(buildDetailSummary(record));
-      setDetailCopyMessage("已複製詳細摘要。");
+      setDetailCopyMessage(t("copiedDetailSummary"));
     } catch {
-      setDetailCopyMessage("複製失敗，請改用手動選取。");
+      setDetailCopyMessage(t("copyFailed"));
     }
   };
 
@@ -569,7 +686,9 @@ export function Phase0RawInfoPanel({
 
   const renderRecordCard = (record: Phase0MessyRecord) => (
     <article
-      aria-label={`查看 ${record.id} 詳細資訊`}
+      aria-label={`${t("viewDetailsPrefix")} ${record.id} ${t(
+        "viewDetailsSuffix",
+      )}`}
       className={`record-card record-card--clickable ${record.id === selectedRecordId ? "record-card--selected" : ""}`}
       key={record.id}
       role="button"
@@ -588,11 +707,13 @@ export function Phase0RawInfoPanel({
           ) : null}
         </div>
       </div>
-      <p>{record.rawText}</p>
+      <p>{translateRawText(record.rawText, language)}</p>
       {renderRecordReviewNote(record.id)}
       <div className="record-card__meta">
         <SourceLabel sourceType={record.sourceType} />
-        <span>更新：{formatDateTime(record.updatedAt)}</span>
+        <span>
+          {t("updatedAt")}：{formatDateTime(record.updatedAt)}
+        </span>
       </div>
       <button
         type="button"
@@ -601,7 +722,7 @@ export function Phase0RawInfoPanel({
           onSelect(record.id);
         }}
       >
-        送到整理工作台
+        {t("sendToWorkbench")}
       </button>
     </article>
   );
@@ -610,20 +731,22 @@ export function Phase0RawInfoPanel({
     <div className="phase0-raw">
       <div className="panel__header">
         <div className="panel__header__title">
-          <h2>原始資訊</h2>
-          <p>這些還不是整理後資料，不能直接當成行動依據。</p>
+          <h2>{t("rawPanelTitle")}</h2>
+          <p>{t("rawPanelDescription")}</p>
         </div>
         <div className="panel__header__actions">
           <button
-            aria-label="打開小驚喜"
+            aria-label={t("openSurprise")}
             className="phase0-raw__surprise-button"
-            title="小驚喜"
+            title={t("openSurprise")}
             type="button"
             onClick={openSurpriseAfterThreeClicks}
           >
             <span aria-hidden="true">⚡</span>
           </button>
-          <p>{records.length} 筆資料</p>
+          <p>
+            {records.length} {t("recordsCountSuffix")}
+          </p>
         </div>
       </div>
 
@@ -637,7 +760,7 @@ export function Phase0RawInfoPanel({
           type="button"
           onClick={() => setShowAddForm((current) => !current)}
         >
-          {showAddForm ? "取消新增" : "新增原始資訊"}
+          {showAddForm ? t("cancelAdd") : t("addRaw")}
         </button>
       </div>
 
@@ -645,13 +768,11 @@ export function Phase0RawInfoPanel({
         {showAddForm ? (
           <div className="phase0-raw__add-form">
             <div className="phase0-raw__add-note">
-              <h3>快速回報</h3>
-              <p>
-                原始資訊內容必填。來源、時間、地點或範圍、確認方式可先不填；送出後會標示缺漏與待人工確認，不會變成已確認資料。
-              </p>
+              <h3>{t("quickReport")}</h3>
+              <p>{t("quickReportDescription")}</p>
             </div>
             <label htmlFor="new-raw-text">
-              原始資訊內容（必填）
+              {t("rawContentRequired")}
               <textarea
                 id="new-raw-text"
                 value={newRawText}
@@ -664,15 +785,15 @@ export function Phase0RawInfoPanel({
             </label>
             <div className="phase0-raw__ai-assist">
               <div>
-                <h3>AI 判斷建議</h3>
-                <p>依原始文字先填入可推測欄位；所有建議仍需人工確認。</p>
+                <h3>{t("aiAssistTitle")}</h3>
+                <p>{t("aiAssistDescription")}</p>
               </div>
               <button type="button" onClick={handleAiSuggestion}>
-                AI 判斷並填入
+                {t("aiAssistButton")}
               </button>
             </div>
             <label htmlFor="new-source-type">
-              來源類型（可先不填）
+              {t("sourceTypeOptional")}
               <select
                 id="new-source-type"
                 value={newSourceType}
@@ -681,14 +802,20 @@ export function Phase0RawInfoPanel({
                   setNewFormError("");
                 }}
               >
-                <option value="">未提供，系統標示待補</option>
-                <option value="社群轉錄">社群轉錄</option>
-                <option value="現場回報">現場回報</option>
-                <option value="官方公告">官方公告</option>
+                <option value="">{t("missingSourceOption")}</option>
+                <option value="社群轉錄">
+                  {labelForSourceType("社群轉錄", language)}
+                </option>
+                <option value="現場回報">
+                  {labelForSourceType("現場回報", language)}
+                </option>
+                <option value="官方公告">
+                  {labelForSourceType("官方公告", language)}
+                </option>
               </select>
             </label>
             <label htmlFor="new-reported-at">
-              時間（可先不填）
+              {t("timeOptional")}
               <input
                 id="new-reported-at"
                 type="time"
@@ -700,7 +827,7 @@ export function Phase0RawInfoPanel({
               />
             </label>
             <fieldset className="phase0-map-picker">
-              <legend>地點或範圍（可先不選）</legend>
+              <legend>{t("locationOptional")}</legend>
               <div className="phase0-map-picker__grid" role="radiogroup">
                 {locationOptions.map((option) => (
                   <button
@@ -713,14 +840,14 @@ export function Phase0RawInfoPanel({
                       setNewFormError("");
                     }}
                   >
-                    {option}
+                    {labelForSourceType(option, language)}
                   </button>
                 ))}
               </div>
-              <p>這是課堂用模擬範圍，不連接真實地圖或真實地址。</p>
+              <p>{t("mockMapNote")}</p>
             </fieldset>
             <label htmlFor="new-confirmation">
-              確認方式（可先不選）
+              {t("confirmationOptional")}
               <select
                 id="new-confirmation"
                 value={newConfirmation}
@@ -729,14 +856,20 @@ export function Phase0RawInfoPanel({
                   setNewFormError("");
                 }}
               >
-                <option value="">請選擇</option>
-                <option value="親眼看到">親眼看到</option>
-                <option value="聽別人說">聽別人說</option>
-                <option value="不確定">不確定</option>
+                <option value="">{t("selectPlaceholder")}</option>
+                <option value="親眼看到">
+                  {labelForSourceType("親眼看到", language)}
+                </option>
+                <option value="聽別人說">
+                  {labelForSourceType("聽別人說", language)}
+                </option>
+                <option value="不確定">
+                  {labelForSourceType("不確定", language)}
+                </option>
               </select>
             </label>
             <label htmlFor="new-note">
-              備註
+              {t("note")}
               <textarea
                 id="new-note"
                 value={newNote}
@@ -758,7 +891,7 @@ export function Phase0RawInfoPanel({
                 type="button"
                 onClick={handleAddRecord}
               >
-                加入清單（待確認）
+                {t("addToList")}
               </button>
             </div>
           </div>
@@ -773,12 +906,10 @@ export function Phase0RawInfoPanel({
             aria-modal="true"
             aria-labelledby="ai-fill-notification-title"
           >
-            <h3 id="ai-fill-notification-title">AI 已填入欄位</h3>
-            <p className="phase0-modal__content">
-              以下欄位是依原始資訊文字產生的填寫建議，仍需要人工確認。
-            </p>
+            <h3 id="ai-fill-notification-title">{t("aiFilledTitle")}</h3>
+            <p className="phase0-modal__content">{t("aiFilledDescription")}</p>
             <section>
-              <h4>AI 已填入</h4>
+              <h4>{t("aiFilled")}</h4>
               <ul>
                 {aiFillNotification.filled.map((item) => (
                   <li key={item}>{item}</li>
@@ -787,7 +918,7 @@ export function Phase0RawInfoPanel({
             </section>
             {aiFillNotification.needsManualReview.length > 0 ? (
               <section>
-                <h4>仍需人工補選</h4>
+                <h4>{t("stillNeedsManualSelection")}</h4>
                 <ul>
                   {aiFillNotification.needsManualReview.map((item) => (
                     <li key={item}>{item}</li>
@@ -796,7 +927,7 @@ export function Phase0RawInfoPanel({
               </section>
             ) : null}
             <button type="button" onClick={() => setAiFillNotification(null)}>
-              知道了
+              {t("gotIt")}
             </button>
           </div>
         </div>
@@ -815,18 +946,16 @@ export function Phase0RawInfoPanel({
             aria-labelledby="pikachu-surprise-title"
             onClick={(event) => event.stopPropagation()}
           >
-            <p className="eyebrow">小彩蛋</p>
-            <h3 id="pikachu-surprise-title">被找到了！</h3>
+            <p className="eyebrow">{t("surpriseEyebrow")}</p>
+            <h3 id="pikachu-surprise-title">{t("surpriseTitle")}</h3>
             <img
-              alt="吃餅乾的皮卡丘插圖"
+              alt={t("surpriseAlt")}
               className="phase0-surprise-modal__image"
               src={surpriseImageUrl}
             />
-            <p className="phase0-modal__content">
-              這只是原始資訊區塊裡的小驚喜，不會修改任何資料。
-            </p>
+            <p className="phase0-modal__content">{t("surpriseContent")}</p>
             <button type="button" onClick={closePikachuSurprise}>
-              收起來
+              {t("closeSurprise")}
             </button>
           </div>
         </div>
@@ -847,22 +976,28 @@ export function Phase0RawInfoPanel({
           >
             <div className="phase0-raw__detail-header">
               <div>
-                <p className="eyebrow">原始資訊詳細資訊</p>
+                <p className="eyebrow">{t("rawDetailEyebrow")}</p>
                 <h3 id="raw-detail-title">{detailRecord.id}</h3>
               </div>
               <StatusBadge status={detailRecord.verificationStatus} />
             </div>
             <section>
-              <h4>原始資訊內容</h4>
-              <p>{detailRecord.rawText}</p>
+              <h4>{t("rawDetailContent")}</h4>
+              <p>{translateRawText(detailRecord.rawText, language)}</p>
+              {hasRawTextTranslation(detailRecord.rawText, language) ? (
+                <p className="phase0-raw__original-text">
+                  <strong>{t("originalRawText")}：</strong>
+                  {detailRecord.rawText}
+                </p>
+              ) : null}
             </section>
             <section className="phase0-raw__detail-copy">
-              <h4>詳細摘要</h4>
+              <h4>{t("detailSummary")}</h4>
               <button
                 type="button"
                 onClick={() => void copyDetailSummary(detailRecord)}
               >
-                複製詳細摘要
+                {t("copyDetailSummary")}
               </button>
               {detailCopyMessage ? (
                 <p className="phase0-raw__copy-message">{detailCopyMessage}</p>
@@ -870,7 +1005,7 @@ export function Phase0RawInfoPanel({
             </section>
             {renderIntakeDetails(detailRecord)}
             <section>
-              <h4>資料狀態</h4>
+              <h4>{t("dataStatus")}</h4>
               <div className="phase0-raw__detail-meta">
                 <SourceLabel sourceType={detailRecord.sourceType} />
                 <StatusBadge status={detailRecord.verificationStatus} />
@@ -879,13 +1014,15 @@ export function Phase0RawInfoPanel({
                     {getRecordStatusText(detailRecord.id)}
                   </span>
                 ) : null}
-                <span>更新：{formatDateTime(detailRecord.updatedAt)}</span>
+                <span>
+                  {t("updatedAt")}：{formatDateTime(detailRecord.updatedAt)}
+                </span>
               </div>
             </section>
             {renderRecordReviewNote(detailRecord.id)}
             <div className="phase0-raw__detail-actions">
               <button type="button" onClick={() => setDetailRecordId(null)}>
-                關閉
+                {t("close")}
               </button>
               <button
                 type="button"
@@ -894,7 +1031,7 @@ export function Phase0RawInfoPanel({
                   onSelect(detailRecord.id);
                 }}
               >
-                送到整理工作台
+                {t("sendToWorkbench")}
               </button>
             </div>
           </div>
@@ -904,8 +1041,10 @@ export function Phase0RawInfoPanel({
       <div className="phase0-raw__groups">
         <section className="phase0-raw__group">
           <div className="phase0-raw__group-title">
-            <h3>需要人工確認</h3>
-            <p>{reviewNeededRecords.length} 筆</p>
+            <h3>{t("reviewNeededGroup")}</h3>
+            <p>
+              {reviewNeededRecords.length} {t("recordsCountSuffix")}
+            </p>
           </div>
           <div className="grid">
             {reviewNeededRecords.map((record) => renderRecordCard(record))}
@@ -914,8 +1053,10 @@ export function Phase0RawInfoPanel({
 
         <section className="phase0-raw__group">
           <div className="phase0-raw__group-title">
-            <h3>未審查</h3>
-            <p>{unverifiedRecords.length} 筆</p>
+            <h3>{t("unverifiedGroup")}</h3>
+            <p>
+              {unverifiedRecords.length} {t("recordsCountSuffix")}
+            </p>
           </div>
           <div className="grid">
             {unverifiedRecords.map((record) => renderRecordCard(record))}

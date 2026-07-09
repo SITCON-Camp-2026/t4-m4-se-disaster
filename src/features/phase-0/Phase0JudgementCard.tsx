@@ -1,42 +1,106 @@
 import { useState } from "react";
 import { StatusBadge } from "../../components/StatusBadge";
+import { type Language, useLanguage } from "../../i18n/language";
+import { translatePhase0Text } from "../../i18n/phase0-content";
 import type {
   Phase0InformationValidity,
   Phase0JudgementDraft,
   Phase0MessyRecord,
 } from "./phase0-types";
 
-const kindLabels: Record<Phase0JudgementDraft["possibleKind"], string> = {
-  help_request_candidate: "求助候選",
-  site_status_candidate: "地點狀態候選",
-  task_candidate: "任務候選",
-  assignment_candidate: "人員指派候選",
-  announcement_candidate: "公告候選",
-  unknown: "候選類型待判斷",
+const kindLabels: Record<
+  Language,
+  Record<Phase0JudgementDraft["possibleKind"], string>
+> = {
+  "zh-TW": {
+    help_request_candidate: "求助候選",
+    site_status_candidate: "地點狀態候選",
+    task_candidate: "任務候選",
+    assignment_candidate: "人員指派候選",
+    announcement_candidate: "公告候選",
+    unknown: "候選類型待判斷",
+  },
+  en: {
+    help_request_candidate: "Help request candidate",
+    site_status_candidate: "Site status candidate",
+    task_candidate: "Task candidate",
+    assignment_candidate: "Assignment candidate",
+    announcement_candidate: "Announcement candidate",
+    unknown: "Candidate kind pending",
+  },
 };
 
-const confidenceLabels: Record<Phase0JudgementDraft["confidence"], string> = {
-  low: "低",
-  medium: "中",
-  high: "高",
+const confidenceLabels: Record<
+  Language,
+  Record<Phase0JudgementDraft["confidence"], string>
+> = {
+  "zh-TW": {
+    low: "低",
+    medium: "中",
+    high: "高",
+  },
+  en: {
+    low: "Low",
+    medium: "Medium",
+    high: "High",
+  },
 };
 
 const nextStepLabels: Record<
-  Phase0JudgementDraft["suggestedNextStep"],
-  string
+  Language,
+  Record<Phase0JudgementDraft["suggestedNextStep"], string>
 > = {
-  keep_raw: "先保留原始資訊",
-  ask_for_more_info: "補問來源或現場資訊",
-  send_to_human_review: "交給人工確認",
-  create_candidate_report: "建立候選通報",
-  create_site_update_suggestion: "建立地點更新建議",
-  do_not_use_yet: "暫時不要使用",
+  "zh-TW": {
+    keep_raw: "先保留原始資訊",
+    ask_for_more_info: "補問來源或現場資訊",
+    send_to_human_review: "交給人工確認",
+    create_candidate_report: "建立候選通報",
+    create_site_update_suggestion: "建立地點更新建議",
+    do_not_use_yet: "暫時不要使用",
+  },
+  en: {
+    keep_raw: "Keep raw information",
+    ask_for_more_info: "Ask for source or field information",
+    send_to_human_review: "Send to human review",
+    create_candidate_report: "Create candidate report",
+    create_site_update_suggestion: "Create site update suggestion",
+    do_not_use_yet: "Do not use yet",
+  },
 };
 
-const validityLabels: Record<Phase0InformationValidity, string> = {
-  valid: "有效資訊",
-  uncertain: "待確認",
-  invalid: "無效資訊",
+const validityLabels: Record<
+  Language,
+  Record<Phase0InformationValidity, string>
+> = {
+  "zh-TW": {
+    valid: "有效資訊",
+    uncertain: "待確認",
+    invalid: "無效資訊",
+  },
+  en: {
+    valid: "Valid information",
+    uncertain: "Needs review",
+    invalid: "Invalid information",
+  },
+};
+
+const reasonLabels: Record<Language, Record<string, string>> = {
+  "zh-TW": {
+    來源與時序不明: "來源與時序不明",
+    內容互相衝突: "內容互相衝突",
+    缺少可驗證證據: "缺少可驗證證據",
+    需要人工確認: "需要人工確認",
+    暫時不適合直接使用: "暫時不適合直接使用",
+    其他: "其他",
+  },
+  en: {
+    來源與時序不明: "Source and timing are unclear",
+    內容互相衝突: "Content conflicts",
+    缺少可驗證證據: "Missing verifiable evidence",
+    需要人工確認: "Needs human review",
+    暫時不適合直接使用: "Not suitable for direct use yet",
+    其他: "Other",
+  },
 };
 
 export function Phase0JudgementCard({
@@ -48,6 +112,7 @@ export function Phase0JudgementCard({
   record: Phase0MessyRecord;
   onChange: (updates: Partial<Phase0JudgementDraft>) => void;
 }) {
+  const { language, t } = useLanguage();
   const [customReasonInput, setCustomReasonInput] = useState("");
   const [isCustomReasonSelected, setIsCustomReasonSelected] = useState(false);
   const selectedReasonValue = isCustomReasonSelected
@@ -73,54 +138,68 @@ export function Phase0JudgementCard({
   };
 
   const displayReason = isCustomReasonSelected
-    ? customReasonInput || "請填寫其他理由"
-    : judgement.classificationReason ||
-      "請在上方填寫為什麼這筆資訊應該被分類為這一類。";
+    ? customReasonInput || t("customReasonMissing")
+    : translatePhase0Text(
+        judgement.classificationReason || t("displayReasonPlaceholder"),
+        language,
+      );
+  const displayedPresetReason =
+    !isCustomReasonSelected && judgement.classificationReason
+      ? (reasonLabels[language][judgement.classificationReason] ??
+        translatePhase0Text(judgement.classificationReason, language))
+      : displayReason;
 
   return (
     <article className="judgement-card">
       <div className="judgement-card__header">
         <div>
-          <p className="eyebrow">整理草稿</p>
-          <h3>判斷這筆資訊是否可作為有效資訊</h3>
+          <p className="eyebrow">{t("judgementDraft")}</p>
+          <h3>{t("judgementTitle")}</h3>
         </div>
         <div className="judgement-card__header__meta">
           <StatusBadge status={record.verificationStatus} />
           {judgement.isCompleted ? (
-            <span className="status-badge status-fulfilled">已完成整理</span>
+            <span className="status-badge status-fulfilled">
+              {t("completedSorting")}
+            </span>
           ) : null}
         </div>
       </div>
 
-      <p>
-        這張卡不是標準答案，而是讓你把「不能直接相信」「不能直接變成任務」「需要人工確認」的理由寫出來。
-      </p>
+      <p>{t("judgementDescription")}</p>
 
-      <section className="judgement-summary-grid" aria-label="分類摘要">
+      <section
+        className="judgement-summary-grid"
+        aria-label={t("classificationSummary")}
+      >
         <div className="judgement-summary-card">
-          <span className="judgement-summary-card__label">有效性</span>
-          <strong>{validityLabels[judgement.isValidInformation]}</strong>
-        </div>
-        <div className="judgement-summary-card">
-          <span className="judgement-summary-card__label">不能直接相信</span>
-          <strong>{judgement.unsafeToActDirectly ? "是" : "否"}</strong>
+          <span className="judgement-summary-card__label">{t("validity")}</span>
+          <strong>
+            {validityLabels[language][judgement.isValidInformation]}
+          </strong>
         </div>
         <div className="judgement-summary-card">
           <span className="judgement-summary-card__label">
-            不能直接變成任務
+            {t("unsafeToTrust")}
+          </span>
+          <strong>{judgement.unsafeToActDirectly ? t("yes") : t("no")}</strong>
+        </div>
+        <div className="judgement-summary-card">
+          <span className="judgement-summary-card__label">
+            {t("cannotBecomeTask")}
           </span>
           <strong>
             {judgement.suggestedNextStep === "send_to_human_review" ||
             judgement.suggestedNextStep === "ask_for_more_info"
-              ? "是"
-              : "否"}
+              ? t("yes")
+              : t("no")}
           </strong>
         </div>
       </section>
 
       <form className="judgement-form">
         <label htmlFor={`kind-${record.id}`}>
-          候選類型
+          {t("candidateKind")}
           <select
             id={`kind-${record.id}`}
             value={judgement.possibleKind}
@@ -131,17 +210,16 @@ export function Phase0JudgementCard({
               })
             }
           >
-            <option value="unknown">候選類型待判斷</option>
-            <option value="help_request_candidate">求助候選</option>
-            <option value="site_status_candidate">地點狀態候選</option>
-            <option value="task_candidate">任務候選</option>
-            <option value="assignment_candidate">人員指派候選</option>
-            <option value="announcement_candidate">公告候選</option>
+            {Object.entries(kindLabels[language]).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
           </select>
         </label>
 
         <label htmlFor={`validity-${record.id}`}>
-          是否為有效資訊
+          {t("validInformationQuestion")}
           <select
             id={`validity-${record.id}`}
             value={judgement.isValidInformation}
@@ -152,44 +230,45 @@ export function Phase0JudgementCard({
               })
             }
           >
-            <option value="uncertain">待確認</option>
-            <option value="valid">有效資訊</option>
-            <option value="invalid">無效資訊</option>
+            <option value="uncertain">
+              {validityLabels[language].uncertain}
+            </option>
+            <option value="valid">{validityLabels[language].valid}</option>
+            <option value="invalid">{validityLabels[language].invalid}</option>
           </select>
         </label>
 
         <label htmlFor={`reason-${record.id}`}>
-          分類理由
+          {t("classificationReason")}
           <select
             id={`reason-${record.id}`}
             value={selectedReasonValue}
             onChange={(event) => handleReasonChange(event.target.value)}
           >
-            <option value="">請選擇</option>
-            <option value="來源與時序不明">來源與時序不明</option>
-            <option value="內容互相衝突">內容互相衝突</option>
-            <option value="缺少可驗證證據">缺少可驗證證據</option>
-            <option value="需要人工確認">需要人工確認</option>
-            <option value="暫時不適合直接使用">暫時不適合直接使用</option>
-            <option value="其他">其他</option>
+            <option value="">{t("chooseOption")}</option>
+            {Object.entries(reasonLabels[language]).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
           </select>
         </label>
 
         {isCustomReasonSelected ? (
           <label htmlFor={`reason-other-${record.id}`}>
-            其他理由
+            {t("otherReason")}
             <input
               id={`reason-other-${record.id}`}
               type="text"
               value={customReasonInput}
               onChange={(event) => handleCustomReasonChange(event.target.value)}
-              placeholder="請填寫其他理由"
+              placeholder={t("customReasonPlaceholder")}
             />
           </label>
         ) : null}
 
         <label htmlFor={`review-${record.id}`}>
-          人工確認備註
+          {t("humanReviewNote")}
           <textarea
             id={`review-${record.id}`}
             value={judgement.reviewNotes}
@@ -201,43 +280,43 @@ export function Phase0JudgementCard({
 
       <dl className="judgement-summary">
         <div>
-          <dt>候選類型</dt>
-          <dd>{kindLabels[judgement.possibleKind]}</dd>
+          <dt>{t("candidateKind")}</dt>
+          <dd>{kindLabels[language][judgement.possibleKind]}</dd>
         </div>
         <div>
-          <dt>信心程度</dt>
-          <dd>{confidenceLabels[judgement.confidence]}</dd>
+          <dt>{t("confidence")}</dt>
+          <dd>{confidenceLabels[language][judgement.confidence]}</dd>
         </div>
         <div>
-          <dt>下一步</dt>
-          <dd>{nextStepLabels[judgement.suggestedNextStep]}</dd>
+          <dt>{t("nextStep")}</dt>
+          <dd>{nextStepLabels[language][judgement.suggestedNextStep]}</dd>
         </div>
       </dl>
 
       <section className="judgement-section">
-        <h4>分類理由</h4>
-        <p>{displayReason}</p>
+        <h4>{t("classificationReason")}</h4>
+        <p>{displayedPresetReason}</p>
       </section>
 
       <section className="judgement-section">
-        <h4>人工確認備註</h4>
-        <p>{judgement.reviewNotes || "若需要人類再確認，請在這裡寫下提醒。"}</p>
+        <h4>{t("humanReviewNote")}</h4>
+        <p>{judgement.reviewNotes || t("reviewNotePlaceholder")}</p>
       </section>
 
       <section>
-        <h4>目前只有安全預設</h4>
+        <h4>{t("safeDefaultOnly")}</h4>
         <ul>
           {judgement.evidence.map((item) => (
-            <li key={item}>{item}</li>
+            <li key={item}>{translatePhase0Text(item, language)}</li>
           ))}
         </ul>
       </section>
 
       <section>
-        <h4>目前卡住的地方</h4>
+        <h4>{t("blockersTitle")}</h4>
         <ul>
           {judgement.blockers.map((item) => (
-            <li key={item}>{item}</li>
+            <li key={item}>{translatePhase0Text(item, language)}</li>
           ))}
         </ul>
       </section>
