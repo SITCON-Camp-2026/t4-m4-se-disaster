@@ -310,14 +310,14 @@ textarea {
   font-size: 0.75rem;
   opacity: 0.34;
   box-shadow: none;
+  transform: none;
 }
 
-.phase0-raw__surprise-button:hover,
-.phase0-raw__surprise-button:focus-visible {
-  border-color: var(--warning-border);
-  background: var(--warning-soft);
-  opacity: 0.9;
-  transform: translateY(-1px) rotate(-8deg);
+.phase0-raw__surprise-button:hover {
+  border-color: var(--border-soft);
+  background: var(--surface-muted);
+  opacity: 0.34;
+  transform: none;
 }
 
 .panel__header h2 {

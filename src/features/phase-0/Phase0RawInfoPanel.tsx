@@ -240,6 +240,7 @@ export function Phase0RawInfoPanel({
   const [detailRecordId, setDetailRecordId] = useState<string | null>(null);
   const [detailCopyMessage, setDetailCopyMessage] = useState("");
   const [showPikachuSurprise, setShowPikachuSurprise] = useState(false);
+  const [surpriseClickCount, setSurpriseClickCount] = useState(0);
   const [showAddForm, setShowAddForm] = useState(false);
 
   const reviewNeededRecords = useMemo(
@@ -532,6 +533,23 @@ export function Phase0RawInfoPanel({
     }
   };
 
+  const openSurpriseAfterThreeClicks = () => {
+    const nextClickCount = surpriseClickCount + 1;
+
+    if (nextClickCount < 3) {
+      setSurpriseClickCount(nextClickCount);
+      return;
+    }
+
+    setSurpriseClickCount(0);
+    setShowPikachuSurprise(true);
+  };
+
+  const closePikachuSurprise = () => {
+    setSurpriseClickCount(0);
+    setShowPikachuSurprise(false);
+  };
+
   const openRecordDetail = (recordId: string) => {
     setDetailRecordId(recordId);
     setDetailCopyMessage("");
@@ -601,7 +619,7 @@ export function Phase0RawInfoPanel({
             className="phase0-raw__surprise-button"
             title="小驚喜"
             type="button"
-            onClick={() => setShowPikachuSurprise(true)}
+            onClick={openSurpriseAfterThreeClicks}
           >
             <span aria-hidden="true">⚡</span>
           </button>
@@ -788,7 +806,7 @@ export function Phase0RawInfoPanel({
         <div
           className="phase0-modal__backdrop"
           role="presentation"
-          onClick={() => setShowPikachuSurprise(false)}
+          onClick={closePikachuSurprise}
         >
           <div
             className="phase0-modal phase0-surprise-modal"
@@ -807,7 +825,7 @@ export function Phase0RawInfoPanel({
             <p className="phase0-modal__content">
               這只是原始資訊區塊裡的小驚喜，不會修改任何資料。
             </p>
-            <button type="button" onClick={() => setShowPikachuSurprise(false)}>
+            <button type="button" onClick={closePikachuSurprise}>
               收起來
             </button>
           </div>

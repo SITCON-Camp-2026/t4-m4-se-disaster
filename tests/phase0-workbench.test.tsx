@@ -110,7 +110,16 @@ describe("Phase0Workbench draft editor", () => {
   it("opens a small surprise from the raw information header", () => {
     render(<App />);
 
-    fireEvent.click(screen.getByRole("button", { name: "打開小驚喜" }));
+    const surpriseButton = screen.getByRole("button", { name: "打開小驚喜" });
+
+    fireEvent.click(surpriseButton);
+    fireEvent.click(surpriseButton);
+
+    expect(
+      screen.queryByRole("dialog", { name: "被找到了！" }),
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(surpriseButton);
 
     const dialog = screen.getByRole("dialog", { name: "被找到了！" });
     expect(dialog).toHaveTextContent("小彩蛋");
