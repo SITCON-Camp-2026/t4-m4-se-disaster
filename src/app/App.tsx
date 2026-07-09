@@ -13,7 +13,7 @@ const tabs: Array<{ key: TabKey; label: string }> = [
   { key: "workbench", label: "整理工作台" },
 ];
 
-const workbenchPassword = "camp2026";
+const workbenchPassword = "pika";
 const themeStorageKey = "phase0-theme-mode";
 const phase0Records = messyReports satisfies Phase0MessyRecord[];
 

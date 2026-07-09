@@ -7,7 +7,7 @@ import { Phase0Workbench } from "../src/features/phase-0/Phase0Workbench";
 
 function enterWorkbenchPassword() {
   fireEvent.change(screen.getByLabelText("密碼"), {
-    target: { value: "camp2026" },
+    target: { value: "pika" },
   });
   fireEvent.click(screen.getByRole("button", { name: "確認進入" }));
 }

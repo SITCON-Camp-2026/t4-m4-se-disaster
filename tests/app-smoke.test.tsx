@@ -4,7 +4,7 @@ import { App } from "../src/app/App";
 
 function enterWorkbenchPassword() {
   fireEvent.change(screen.getByLabelText("密碼"), {
-    target: { value: "camp2026" },
+    target: { value: "pika" },
   });
   fireEvent.click(screen.getByRole("button", { name: "確認進入" }));
 }
@@ -115,7 +115,7 @@ describe("App", () => {
     ).not.toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText("密碼"), {
-      target: { value: "camp2026" },
+      target: { value: "pika" },
     });
     fireEvent.click(screen.getByRole("button", { name: "確認進入" }));
 
