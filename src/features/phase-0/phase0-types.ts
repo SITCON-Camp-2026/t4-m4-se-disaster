@@ -9,6 +9,8 @@ export type Phase0PossibleKind =
 
 export type Phase0Confidence = "low" | "medium" | "high";
 
+export type Phase0InformationValidity = "valid" | "uncertain" | "invalid";
+
 export type Phase0SuggestedNextStep =
   | "keep_raw"
   | "ask_for_more_info"
@@ -34,4 +36,8 @@ export type Phase0JudgementDraft = {
   suggestedNextStep: Phase0SuggestedNextStep;
   unsafeToActDirectly: boolean;
   humanReviewNote?: string;
+  isValidInformation: Phase0InformationValidity;
+  classificationReason: string;
+  reviewNotes: string;
+  isCompleted: boolean;
 };

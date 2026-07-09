@@ -19,6 +19,7 @@ export function App() {
   const [selectedRecordId, setSelectedRecordId] = useState(
     phase0Records[0]?.id ?? "",
   );
+  const [completedRecordIds, setCompletedRecordIds] = useState<string[]>([]);
 
   function selectForWorkbench(recordId: string) {
     setSelectedRecordId(recordId);
@@ -57,12 +58,21 @@ export function App() {
             records={phase0Records}
             selectedRecordId={selectedRecordId}
             onSelect={selectForWorkbench}
+            completedRecordIds={completedRecordIds}
           />
         ) : (
           <Phase0Workbench
             records={phase0Records}
             selectedRecordId={selectedRecordId}
             onSelect={setSelectedRecordId}
+            onCompleteRecord={(recordId) => {
+              setCompletedRecordIds((current) =>
+                current.includes(recordId) ? current : [...current, recordId],
+              );
+            }}
+            onResetRecord={(recordId) => {
+              setCompletedRecordIds((current) => current.filter((id) => id !== recordId));
+            }}
           />
         )}
       </section>
