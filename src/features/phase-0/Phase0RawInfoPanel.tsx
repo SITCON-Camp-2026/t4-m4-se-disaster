@@ -1,6 +1,8 @@
 import { type KeyboardEvent, useMemo, useState } from "react";
 import { SourceLabel } from "../../components/SourceLabel";
+import { labelForSourceType } from "../../components/source-labels";
 import { StatusBadge } from "../../components/StatusBadge";
+import { labelForStatus } from "../../components/status-labels";
 import { formatDateTime } from "../../lib/date";
 import type { Phase0MessyRecord } from "./phase0-types";
 
@@ -21,6 +23,11 @@ type RawInfoAiSuggestion = {
 type AiFillNotification = {
   filled: string[];
   needsManualReview: string[];
+};
+
+type DetailField = {
+  label: string;
+  value: string;
 };
 
 const locationOptions = [
@@ -230,6 +237,7 @@ export function Phase0RawInfoPanel({
   const [aiFillNotification, setAiFillNotification] =
     useState<AiFillNotification | null>(null);
   const [detailRecordId, setDetailRecordId] = useState<string | null>(null);
+  const [detailCopyMessage, setDetailCopyMessage] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
 
   const reviewNeededRecords = useMemo(
@@ -290,13 +298,24 @@ export function Phase0RawInfoPanel({
         ? "AI 建議：欄位由 AI 建議輔助填入，仍需人工檢查採用。"
         : "",
     ].filter(Boolean);
+    const collectedAt = new Date().toISOString();
 
     const nextRecord: Phase0MessyRecord = {
       id: recordId,
       rawText: newRawText.trim(),
       sourceType: newSourceType || "quick_report",
       verificationStatus: "needs_review",
-      updatedAt: new Date().toISOString(),
+      updatedAt: collectedAt,
+      intakeDetails: {
+        sourceType: newSourceType,
+        reportedAt: newReportedAt.trim(),
+        location: newLocation.trim(),
+        confirmation: newConfirmation,
+        note: newNote.trim(),
+        collectedAt,
+        isIncomplete,
+        missingFields,
+      },
     };
 
     onAddRecord(nextRecord);
@@ -402,8 +421,118 @@ export function Phase0RawInfoPanel({
     );
   };
 
+  const renderIntakeDetails = (record: Phase0MessyRecord) => {
+    const details = record.intakeDetails;
+
+    if (!details) {
+      return null;
+    }
+
+    const fields: DetailField[] = [
+      {
+        label: "資訊取得方式",
+        value: details.sourceType || "未提供（待人工確認）",
+      },
+      {
+        label: "時間",
+        value: details.reportedAt || "未提供（待人工確認）",
+      },
+      {
+        label: "地點或範圍",
+        value: details.location || "未提供（待人工確認）",
+      },
+      {
+        label: "確認方式",
+        value: details.confirmation || "未提供（待人工確認）",
+      },
+      {
+        label: "備註",
+        value: details.note || "未提供",
+      },
+      {
+        label: "收錄狀態",
+        value: details.isIncomplete
+          ? "不完整與待人工確認"
+          : "欄位已填，仍待人工確認",
+      },
+      {
+        label: "加入時間",
+        value: formatDateTime(details.collectedAt),
+      },
+    ];
+
+    return (
+      <section>
+        <h4>新增時取得的所有欄位</h4>
+        <dl className="phase0-raw__detail-fields">
+          {fields.map((field) => (
+            <div key={field.label}>
+              <dt>{field.label}</dt>
+              <dd>{field.value}</dd>
+            </div>
+          ))}
+        </dl>
+        {details.missingFields.length > 0 ? (
+          <div className="phase0-raw__detail-missing">
+            <strong>仍需人工確認</strong>
+            <ul>
+              {details.missingFields.map((field) => (
+                <li key={field}>{field}</li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+      </section>
+    );
+  };
+
+  const buildDetailSummary = (record: Phase0MessyRecord) => {
+    const reviewNote = generatedReviewNotes[record.id];
+    const details = record.intakeDetails;
+    const statusText = getRecordStatusText(record.id);
+    const lines = [
+      `原始資訊 ${record.id}`,
+      `原文：${record.rawText}`,
+      `資訊取得方式：${labelForSourceType(details?.sourceType || record.sourceType || "未提供")}`,
+      `查核狀態：${labelForStatus(record.verificationStatus)}`,
+      statusText ? `整理狀態：${statusText}` : "",
+      `更新時間：${formatDateTime(record.updatedAt)}`,
+      details ? `時間：${details.reportedAt || "未提供"}` : "",
+      details ? `地點或範圍：${details.location || "未提供"}` : "",
+      details ? `確認方式：${details.confirmation || "未提供"}` : "",
+      details ? `備註：${details.note || "未提供"}` : "",
+      details
+        ? `收錄狀態：${
+            details.isIncomplete
+              ? "不完整與待人工確認"
+              : "欄位已填，仍待人工確認"
+          }`
+        : "",
+      reviewNote?.missing.length
+        ? `仍需人工確認：${reviewNote.missing.join(" / ")}`
+        : "",
+    ].filter(Boolean);
+
+    return lines.join("\n");
+  };
+
+  const copyDetailSummary = async (record: Phase0MessyRecord) => {
+    if (!navigator.clipboard?.writeText) {
+      setDetailCopyMessage("此瀏覽器不支援自動複製。");
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(buildDetailSummary(record));
+      setDetailCopyMessage("已複製詳細摘要。");
+    } catch {
+      setDetailCopyMessage("複製失敗，請改用手動選取。");
+    }
+  };
+
   const openRecordDetail = (recordId: string) => {
     setDetailRecordId(recordId);
+    setDetailCopyMessage("");
   };
 
   const handleRecordCardKeyDown = (
@@ -645,12 +774,17 @@ export function Phase0RawInfoPanel({
       ) : null}
 
       {detailRecord ? (
-        <div className="phase0-modal__backdrop" role="presentation">
+        <div
+          className="phase0-modal__backdrop"
+          role="presentation"
+          onClick={() => setDetailRecordId(null)}
+        >
           <div
             className="phase0-modal phase0-raw__detail-modal"
             role="dialog"
             aria-modal="true"
             aria-labelledby="raw-detail-title"
+            onClick={(event) => event.stopPropagation()}
           >
             <div className="phase0-raw__detail-header">
               <div>
@@ -663,6 +797,19 @@ export function Phase0RawInfoPanel({
               <h4>原始資訊內容</h4>
               <p>{detailRecord.rawText}</p>
             </section>
+            <section className="phase0-raw__detail-copy">
+              <h4>詳細摘要</h4>
+              <button
+                type="button"
+                onClick={() => void copyDetailSummary(detailRecord)}
+              >
+                複製詳細摘要
+              </button>
+              {detailCopyMessage ? (
+                <p className="phase0-raw__copy-message">{detailCopyMessage}</p>
+              ) : null}
+            </section>
+            {renderIntakeDetails(detailRecord)}
             <section>
               <h4>資料狀態</h4>
               <div className="phase0-raw__detail-meta">

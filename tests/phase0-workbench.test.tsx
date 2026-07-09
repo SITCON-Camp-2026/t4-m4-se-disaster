@@ -1,5 +1,5 @@
-import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { fireEvent, render, screen, within } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 import { App } from "../src/app/App";
 import messyReports from "../src/fixtures/phase-0/messy-reports.json";
 import { Phase0RawInfoPanel } from "../src/features/phase-0/Phase0RawInfoPanel";
@@ -65,7 +65,13 @@ describe("Phase0Workbench draft editor", () => {
     ).toBeInTheDocument();
   });
 
-  it("opens raw record details when clicking an info card", () => {
+  it("opens raw record details when clicking an info card", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    });
+
     render(<App />);
 
     fireEvent.click(
@@ -78,7 +84,23 @@ describe("Phase0Workbench draft editor", () => {
     expect(dialog).toHaveTextContent("來源：社群轉錄");
     expect(dialog).toHaveTextContent("更新：2026/7/20 09:10");
 
-    fireEvent.click(screen.getByRole("button", { name: "關閉" }));
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "複製詳細摘要" }),
+    );
+
+    expect(await screen.findByText("已複製詳細摘要。")).toBeInTheDocument();
+    expect(writeText).toHaveBeenCalledWith(
+      expect.stringContaining("原始資訊 M-001"),
+    );
+    expect(writeText).toHaveBeenCalledWith(
+      expect.stringContaining("光復車站後方有人說需要十幾個人清泥"),
+    );
+
+    fireEvent.click(dialog);
+
+    expect(screen.getByRole("dialog", { name: "M-001" })).toBeInTheDocument();
+
+    fireEvent.click(dialog.parentElement as HTMLElement);
 
     expect(
       screen.queryByRole("dialog", { name: "M-001" }),
@@ -160,6 +182,27 @@ describe("Phase0Workbench draft editor", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("來源：快速回報（來源待補）")).toBeInTheDocument();
     expect(screen.getAllByText("待人工確認").length).toBeGreaterThan(0);
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "查看 M-013 詳細資訊" }),
+    );
+
+    const dialog = screen.getByRole("dialog", { name: "M-013" });
+    expect(dialog).toHaveTextContent("新增時取得的所有欄位");
+    expect(dialog).toHaveTextContent("原始資訊內容");
+    expect(dialog).toHaveTextContent("填完必填欄位的狀況描述");
+    expect(within(dialog).getAllByText("資訊取得方式").length).toBeGreaterThan(
+      0,
+    );
+    expect(dialog).toHaveTextContent("未提供（待人工確認）");
+    expect(within(dialog).getByText("時間")).toBeInTheDocument();
+    expect(dialog).toHaveTextContent("15:20");
+    expect(within(dialog).getAllByText("地點或範圍").length).toBeGreaterThan(0);
+    expect(dialog).toHaveTextContent("活動中心");
+    expect(within(dialog).getAllByText("確認方式").length).toBeGreaterThan(0);
+    expect(dialog).toHaveTextContent("聽別人說");
+    expect(within(dialog).getByText("備註")).toBeInTheDocument();
+    expect(dialog).toHaveTextContent("需要整理者再追問來源細節");
   });
 
   it("uses AI judgement to fill quick report suggestions from raw text", () => {

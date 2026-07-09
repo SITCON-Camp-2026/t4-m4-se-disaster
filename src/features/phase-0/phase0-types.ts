@@ -25,6 +25,16 @@ export type Phase0MessyRecord = {
   sourceType: string;
   verificationStatus: string;
   updatedAt: string;
+  intakeDetails?: {
+    sourceType: string;
+    reportedAt: string;
+    location: string;
+    confirmation: string;
+    note: string;
+    collectedAt: string;
+    isIncomplete: boolean;
+    missingFields: string[];
+  };
 };
 
 export type Phase0JudgementDraft = {
