@@ -20,24 +20,29 @@ export function Phase0Workbench({
 }) {
   const selectedRecord =
     records.find((record) => record.id === selectedRecordId) ?? records[0];
-  const [drafts, setDrafts] = useState<Record<string, Phase0JudgementDraft>>(() =>
-    Object.fromEntries(
-      records.slice(0, 6).map((record) => [
-        record.id,
-        {
-          ...createPhase0Judgement(record),
-          isValidInformation: "uncertain",
-          classificationReason: "",
-          reviewNotes: "",
-        },
-      ]),
-    ),
+  const [drafts, setDrafts] = useState<Record<string, Phase0JudgementDraft>>(
+    () =>
+      Object.fromEntries(
+        records.slice(0, 6).map((record) => [
+          record.id,
+          {
+            ...createPhase0Judgement(record),
+            isValidInformation: "uncertain",
+            classificationReason: "",
+            reviewNotes: "",
+          },
+        ]),
+      ),
   );
 
-  const currentDraft = drafts[selectedRecord.id] ?? createPhase0Judgement(selectedRecord);
+  const currentDraft =
+    drafts[selectedRecord.id] ?? createPhase0Judgement(selectedRecord);
   const hasCurrentDraft = Boolean(drafts[selectedRecord.id]);
   const getRecordDisplayStatus = (recordId: string) => {
-    return records.find((record) => record.id === recordId)?.verificationStatus ?? "unknown";
+    return (
+      records.find((record) => record.id === recordId)?.verificationStatus ??
+      "unknown"
+    );
   };
 
   const getRecordStatusText = (recordId: string) => {
@@ -128,7 +133,9 @@ export function Phase0Workbench({
               <div className="workbench__queue-item-status">
                 <StatusBadge status={getRecordDisplayStatus(record.id)} />
                 {getRecordStatusText(record.id) ? (
-                  <span className="workbench__queue-item-note">{getRecordStatusText(record.id)}</span>
+                  <span className="workbench__queue-item-note">
+                    {getRecordStatusText(record.id)}
+                  </span>
                 ) : null}
               </div>
             </button>

@@ -50,7 +50,9 @@ export function Phase0JudgementCard({
 }) {
   const [customReasonInput, setCustomReasonInput] = useState("");
   const [isCustomReasonSelected, setIsCustomReasonSelected] = useState(false);
-  const selectedReasonValue = isCustomReasonSelected ? "其他" : judgement.classificationReason;
+  const selectedReasonValue = isCustomReasonSelected
+    ? "其他"
+    : judgement.classificationReason;
 
   const handleReasonChange = (value: string) => {
     if (value === "其他") {
@@ -72,7 +74,8 @@ export function Phase0JudgementCard({
 
   const displayReason = isCustomReasonSelected
     ? customReasonInput || "請填寫其他理由"
-    : judgement.classificationReason || "請在上方填寫為什麼這筆資訊應該被分類為這一類。";
+    : judgement.classificationReason ||
+      "請在上方填寫為什麼這筆資訊應該被分類為這一類。";
 
   return (
     <article className="judgement-card">
@@ -103,7 +106,9 @@ export function Phase0JudgementCard({
           <strong>{judgement.unsafeToActDirectly ? "是" : "否"}</strong>
         </div>
         <div className="judgement-summary-card">
-          <span className="judgement-summary-card__label">不能直接變成任務</span>
+          <span className="judgement-summary-card__label">
+            不能直接變成任務
+          </span>
           <strong>
             {judgement.suggestedNextStep === "send_to_human_review" ||
             judgement.suggestedNextStep === "ask_for_more_info"
@@ -121,7 +126,8 @@ export function Phase0JudgementCard({
             value={judgement.possibleKind}
             onChange={(event) =>
               onChange({
-                possibleKind: event.target.value as Phase0JudgementDraft["possibleKind"],
+                possibleKind: event.target
+                  .value as Phase0JudgementDraft["possibleKind"],
               })
             }
           >
@@ -141,7 +147,8 @@ export function Phase0JudgementCard({
             value={judgement.isValidInformation}
             onChange={(event) =>
               onChange({
-                isValidInformation: event.target.value as Phase0InformationValidity,
+                isValidInformation: event.target
+                  .value as Phase0InformationValidity,
               })
             }
           >

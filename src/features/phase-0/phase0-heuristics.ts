@@ -15,19 +15,21 @@ export function createPhase0Judgement(
   const blockers: string[] = [];
 
   if (!isVerified) {
-    blockers.push("這不是已確認資訊，不能直接當成事實或任務依據。" );
+    blockers.push("這不是已確認資訊，不能直接當成事實或任務依據。");
   }
 
-  if (/有人說|有人在群組|社群|疑似|不知道|尚未|可能|似乎|只知道/.test(rawText)) {
-    blockers.push("內容帶有轉述、推測或不確定性，不能直接相信。" );
+  if (
+    /有人說|有人在群組|社群|疑似|不知道|尚未|可能|似乎|只知道/.test(rawText)
+  ) {
+    blockers.push("內容帶有轉述、推測或不確定性，不能直接相信。");
   }
 
   if (/地址|位置|住家|長者|親友|完整地址|集合點/.test(rawText)) {
-    blockers.push("資訊涉及地點、隱私或當事人位置，需再確認。" );
+    blockers.push("資訊涉及地點、隱私或當事人位置，需再確認。");
   }
 
   if (/不確定|不知道|尚未|衝突|互相/.test(rawText)) {
-    blockers.push("資訊內容存在衝突或缺少足夠上下文。" );
+    blockers.push("資訊內容存在衝突或缺少足夠上下文。");
   }
 
   const suggestedNextStep = isVerified
@@ -43,7 +45,8 @@ export function createPhase0Judgement(
     possibleKind: "unknown",
     confidence: "low",
     evidence,
-    blockers: blockers.length > 0 ? blockers : ["目前沒有足夠證據支撐直接採用。"],
+    blockers:
+      blockers.length > 0 ? blockers : ["目前沒有足夠證據支撐直接採用。"],
     suggestedNextStep,
     unsafeToActDirectly: true,
     isValidInformation: "uncertain",

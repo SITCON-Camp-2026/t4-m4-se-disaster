@@ -40,6 +40,6 @@ describe("phase 0 heuristics", () => {
     const judgement = createPhase0Judgement(messyReports[10]);
 
     expect(judgement.possibleKind).toBe("unknown");
-    expect(judgement.suggestedNextStep).toBe("send_to_human_review");
+    expect(judgement.suggestedNextStep).toBe("ask_for_more_info");
   });
 });
